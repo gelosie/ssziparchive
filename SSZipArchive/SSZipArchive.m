@@ -43,8 +43,15 @@
 	return [self unzipFileAtPath:path toDestination:destination overwrite:YES password:nil error:nil delegate:delegate];
 }
 
++ (BOOL)unzipFileAtPath:(NSString *)path toDestination:(NSString *)destination delegate:(id<SSZipArchiveDelegate>)delegate userInfo:(NSDictionary *)aUserInfo{
+    return [self unzipFileAtPath:path toDestination:destination overwrite:YES password:nil error:nil delegate:delegate userInfo:aUserInfo];
+}
 
-+ (BOOL)unzipFileAtPath:(NSString *)path toDestination:(NSString *)destination overwrite:(BOOL)overwrite password:(NSString *)password error:(NSError **)error delegate:(id<SSZipArchiveDelegate>)delegate {
++ (BOOL)unzipFileAtPath:(NSString *)path toDestination:(NSString *)destination overwrite:(BOOL)overwrite password:(NSString *)password error:(NSError **)error delegate:(id<SSZipArchiveDelegate>)delegate{
+    return [self unzipFileAtPath:path toDestination:destination overwrite:overwrite password:password error:error delegate:delegate userInfo:nil];
+}
+
++ (BOOL)unzipFileAtPath:(NSString *)path toDestination:(NSString *)destination overwrite:(BOOL)overwrite password:(NSString *)password error:(NSError **)error delegate:(id<SSZipArchiveDelegate>)delegate userInfo:(NSDictionary *)aUserInfo{
 	// Begin opening
 	zipFile zip = unzOpen((const char*)[path UTF8String]);
 	if (zip == NULL) {
@@ -78,11 +85,11 @@
 	NSMutableSet *directoriesModificationDates = [[NSMutableSet alloc] init];
 
 	// Message delegate
-	if ([delegate respondsToSelector:@selector(zipArchiveWillUnzipArchiveAtPath:zipInfo:)]) {
-		[delegate zipArchiveWillUnzipArchiveAtPath:path zipInfo:globalInfo];
+	if ([delegate respondsToSelector:@selector(zipArchiveWillUnzipArchiveAtPath:zipInfo:userInfo:)]) {
+		[delegate zipArchiveWillUnzipArchiveAtPath:path zipInfo:globalInfo userInfo:aUserInfo];
 	}
-	if ([delegate respondsToSelector:@selector(zipArchiveProgressEvent:total:)]) {
-		[delegate zipArchiveProgressEvent:currentPosition total:fileSize];
+	if ([delegate respondsToSelector:@selector(zipArchiveProgressEvent:total:userInfo:)]) {
+		[delegate zipArchiveProgressEvent:currentPosition total:fileSize userInfo:aUserInfo];
 	}
 
 	NSInteger currentFileNumber = 0;
@@ -113,12 +120,12 @@
 			currentPosition += fileInfo.compressed_size;
 
 			// Message delegate
-			if ([delegate respondsToSelector:@selector(zipArchiveWillUnzipFileAtIndex:totalFiles:archivePath:fileInfo:)]) {
+			if ([delegate respondsToSelector:@selector(zipArchiveWillUnzipFileAtIndex:totalFiles:archivePath:fileInfo:userInfo:)]) {
 				[delegate zipArchiveWillUnzipFileAtIndex:currentFileNumber totalFiles:(NSInteger)globalInfo.number_entry
-											 archivePath:path fileInfo:fileInfo];
+											 archivePath:path fileInfo:fileInfo userInfo:aUserInfo];
 			}
-			if ([delegate respondsToSelector:@selector(zipArchiveProgressEvent:total:)]) {
-				[delegate zipArchiveProgressEvent:currentPosition total:fileSize];
+			if ([delegate respondsToSelector:@selector(zipArchiveProgressEvent:total:userInfo:)]) {
+				[delegate zipArchiveProgressEvent:currentPosition total:fileSize userInfo:aUserInfo];
 			}
 
 			char *filename = (char *)malloc(fileInfo.size_filename + 1);
@@ -265,9 +272,9 @@
 			ret = unzGoToNextFile( zip );
 
 			// Message delegate
-			if ([delegate respondsToSelector:@selector(zipArchiveDidUnzipFileAtIndex:totalFiles:archivePath:fileInfo:)]) {
+			if ([delegate respondsToSelector:@selector(zipArchiveDidUnzipFileAtIndex:totalFiles:archivePath:fileInfo:userInfo:)]) {
 				[delegate zipArchiveDidUnzipFileAtIndex:currentFileNumber totalFiles:(NSInteger)globalInfo.number_entry
-											 archivePath:path fileInfo:fileInfo];
+											 archivePath:path fileInfo:fileInfo userInfo:aUserInfo];
 			}
 
 			currentFileNumber++;
@@ -295,12 +302,12 @@
 #endif
 
 	// Message delegate
-	if (success && [delegate respondsToSelector:@selector(zipArchiveDidUnzipArchiveAtPath:zipInfo:unzippedPath:)]) {
-		[delegate zipArchiveDidUnzipArchiveAtPath:path zipInfo:globalInfo unzippedPath:destination];
+	if (success && [delegate respondsToSelector:@selector(zipArchiveDidUnzipArchiveAtPath:zipInfo:unzippedPath:userInfo:)]) {
+		[delegate zipArchiveDidUnzipArchiveAtPath:path zipInfo:globalInfo unzippedPath:destination userInfo:aUserInfo];
 	}
 	// final progress event = 100%
-	if ([delegate respondsToSelector:@selector(zipArchiveProgressEvent:total:)]) {
-		[delegate zipArchiveProgressEvent:fileSize total:fileSize];
+	if ([delegate respondsToSelector:@selector(zipArchiveProgressEvent:total:userInfo:)]) {
+		[delegate zipArchiveProgressEvent:fileSize total:fileSize userInfo:aUserInfo];
 	}
 
 	return success;
